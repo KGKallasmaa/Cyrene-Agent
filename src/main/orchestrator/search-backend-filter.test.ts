@@ -97,6 +97,10 @@ describe("shouldExposeSearchTool", () => {
     expect(shouldExposeSearchTool(BUILTIN_SEARCH_TOOL_ID, "tavily")).toBe(true);
   });
 
+  it("exposes built-in web_search for keenable backend", () => {
+    expect(shouldExposeSearchTool(BUILTIN_SEARCH_TOOL_ID, "keenable")).toBe(true);
+  });
+
   it("hides built-in web_search for minimax backend", () => {
     expect(shouldExposeSearchTool(BUILTIN_SEARCH_TOOL_ID, "minimax")).toBe(false);
   });

@@ -9,7 +9,7 @@ import { MusicSettingsModal } from "./MusicSettingsModal";
 import { Card } from "../../components/ui/Card";
 import { FullAccessConfirmation } from "../../components/ui/FullAccessConfirmation";
 
-type SearchEngine = "off" | "bocha" | "tavily" | "minimax" | "anySearch";
+type SearchEngine = "off" | "bocha" | "tavily" | "minimax" | "anySearch" | "keenable";
 type PermissionLevel = "project-read-only" | "read-only" | "scoped" | "per-action" | "full";
 
 interface ToolValues {
@@ -22,15 +22,16 @@ interface ToolValues {
   searchTavilyKey: string;
   searchMinimaxKey: string;
   searchAnySearchKey: string;
+  searchKeenableKey: string;
 }
 
 const defaults: ToolValues = {
   weatherEnabled: false, weatherSource: "open-meteo", amapKey: "", travelEnabled: false,
-  searchEngine: "off", searchBochaKey: "", searchTavilyKey: "", searchMinimaxKey: "", searchAnySearchKey: "",
+  searchEngine: "off", searchBochaKey: "", searchTavilyKey: "", searchMinimaxKey: "", searchAnySearchKey: "", searchKeenableKey: "",
 };
 
 const searchKeyFor: Record<Exclude<SearchEngine, "off">, keyof ToolValues> = {
-  bocha: "searchBochaKey", tavily: "searchTavilyKey", minimax: "searchMinimaxKey", anySearch: "searchAnySearchKey",
+  bocha: "searchBochaKey", tavily: "searchTavilyKey", minimax: "searchMinimaxKey", anySearch: "searchAnySearchKey", keenable: "searchKeenableKey",
 };
 
 function readTools(value: unknown): ToolValues {
@@ -229,7 +230,7 @@ export function ToolSettingsPanel({ musicSettingsNavigation = 0 }: { musicSettin
         <div className="cy-settings-section__heading"><h2 data-settings-search-id="settingsPage.tools.search"><Search size={18} />{t("settingsPage.tools.search")}</h2><p>{t("settingsPage.tools.searchDescription")}</p></div>
         <Card>
           <div className="cy-settings-row"><div className="cy-settings-row__copy"><strong data-settings-search-id="settingsPage.tools.searchEnabled">{t("settingsPage.tools.searchEnabled")}</strong></div><SettingsSwitch ariaLabel={t("settingsPage.tools.searchEnabled")} checked={values.searchEngine !== "off"} disabled={saving} onChange={(checked) => void setSearchEnabled(checked)} /></div>
-          {values.searchEngine !== "off" && <><div className="cy-settings-row"><div className="cy-settings-row__copy"><strong data-settings-search-id="settingsPage.tools.searchSource">{t("settingsPage.tools.searchSource")}</strong></div><SettingsSelect className="cy-settings-tools__select" ariaLabel={t("settingsPage.tools.searchSource")} value={values.searchEngine} disabled={saving} options={(["bocha", "tavily", "minimax", "anySearch"] as const).map((value) => ({ value, label: t(`settingsPage.tools.search${value}`) }))} onChange={(value) => void setSearchEngine(value)} /></div><div className="cy-settings-row"><div className="cy-settings-row__copy"><strong>{t("settingsPage.tools.searchKey", { provider: t(`settingsPage.tools.search${activeSearch}`) })}</strong></div><div className="cy-settings-row__control cy-settings-tools__field"><SettingsPasswordInput showLabel={t("settingsPage.asr.showSecret")} hideLabel={t("settingsPage.asr.hideSecret")} value={String(values[searchKey])} onChange={(event) => setValues((current) => ({ ...current, [searchKey]: event.target.value }))} /><Button disabled={saving} onClick={() => void savePatch({ [searchKey]: values[searchKey] })}>{t("settingsPage.tools.save")}</Button></div></div></>}
+          {values.searchEngine !== "off" && <><div className="cy-settings-row"><div className="cy-settings-row__copy"><strong data-settings-search-id="settingsPage.tools.searchSource">{t("settingsPage.tools.searchSource")}</strong></div><SettingsSelect className="cy-settings-tools__select" ariaLabel={t("settingsPage.tools.searchSource")} value={values.searchEngine} disabled={saving} options={(["bocha", "tavily", "minimax", "anySearch", "keenable"] as const).map((value) => ({ value, label: t(`settingsPage.tools.search${value}`) }))} onChange={(value) => void setSearchEngine(value)} /></div><div className="cy-settings-row"><div className="cy-settings-row__copy"><strong>{t("settingsPage.tools.searchKey", { provider: t(`settingsPage.tools.search${activeSearch}`) })}</strong></div><div className="cy-settings-row__control cy-settings-tools__field"><SettingsPasswordInput showLabel={t("settingsPage.asr.showSecret")} hideLabel={t("settingsPage.asr.hideSecret")} value={String(values[searchKey])} onChange={(event) => setValues((current) => ({ ...current, [searchKey]: event.target.value }))} /><Button disabled={saving} onClick={() => void savePatch({ [searchKey]: values[searchKey] })}>{t("settingsPage.tools.save")}</Button></div></div></>}
         </Card>
       </section>
 

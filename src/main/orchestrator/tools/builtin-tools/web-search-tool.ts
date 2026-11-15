@@ -22,21 +22,24 @@ let searchEngineGetter: (() => string) | null = null;
 let searchBochaKeyGetter: (() => string) | null = null;
 let searchTavilyKeyGetter: (() => string) | null = null;
 let searchAnySearchKeyGetter: (() => string) | null = null;
+let searchKeenableKeyGetter: (() => string) | null = null;
 
 /**
  * index.ts 启动时调用，注入搜索引擎/各源key 的读取器。
- * engine: "off" | "bocha" | "tavily" | "volcano" | "minimax"
+ * engine: "off" | "bocha" | "tavily" | "volcano" | "minimax" | "anySearch" | "keenable"
  */
 export function setSearchConfig(
   engineGetter: () => string,
   bochaKeyGetter: () => string,
   tavilyKeyGetter: () => string,
   anySearchKeyGetter: () => string,
+  keenableKeyGetter: () => string = () => "",
 ): void {
   searchEngineGetter = engineGetter;
   searchBochaKeyGetter = bochaKeyGetter;
   searchTavilyKeyGetter = tavilyKeyGetter;
   searchAnySearchKeyGetter = anySearchKeyGetter;
+  searchKeenableKeyGetter = keenableKeyGetter;
 }
 
 interface BochaResult {
@@ -227,6 +230,42 @@ async function anySearchSearch(query: string, key: string, signal?: AbortSignal)
   }
 }
 
+/** Keenable 搜索：有 key 走 /v1/search，没有 key 走免 key 的 /v1/search/public。 */
+async function keenableSearch(query: string, key: string, signal?: AbortSignal): Promise<WebSearchOutput> {
+  const url = key ? "https://api.keenable.ai/v1/search" : "https://api.keenable.ai/v1/search/public";
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), SEARCH_TIMEOUT_MS);
+  const combinedSignal = signal ? AbortSignal.any([signal, ctrl.signal]) : ctrl.signal;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (key) headers["X-API-Key"] = key;
+  else headers["X-Keenable-Title"] = "Cyrene-Agent";
+  try {
+    const resp = await fetch(url, {
+      method: "POST",
+      signal: combinedSignal,
+      headers,
+      body: JSON.stringify({ query, max_results: 8 }),
+    });
+    if (!resp.ok) {
+      throw new Error(`HTTP ${resp.status}`);
+    }
+    const data = await resp.json() as {
+      results?: Array<{ title?: string; url: string; snippet?: string; description?: string }>;
+    };
+    const results: WebSearchResult[] = (data.results ?? []).map((r) => ({
+      title: r.title || r.url,
+      url: r.url,
+      snippet: truncateSnippet(r.snippet || r.description || ""),
+    }));
+    return { success: true, query, resultCount: results.length, results };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    throw new Error(`搜索失败：${msg}`);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function executeWebSearch(args: Record<string, unknown>, ctx?: ToolContext): Promise<string> {
   const engine = searchEngineGetter?.() ?? "off";
   if (engine === "off") {
@@ -266,6 +305,9 @@ async function executeWebSearch(args: Record<string, unknown>, ctx?: ToolContext
   } else if (engine === "anySearch") {
     const key = searchAnySearchKeyGetter?.() ?? "";
     output = await anySearchSearch(query, key, ctx?.signal);
+  } else if (engine === "keenable") {
+    const key = searchKeenableKeyGetter?.() ?? "";
+    output = await keenableSearch(query, key, ctx?.signal);
   } else {
     throw new Error(`E_SEARCH_ENGINE_NOT_SUPPORTED:${engine}`);
   }

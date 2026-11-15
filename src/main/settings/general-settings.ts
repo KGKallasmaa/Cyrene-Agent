@@ -136,13 +136,14 @@ export interface GeneralSettings {
   /** 📁 文件系统 MCP（官方 server-filesystem，允许目录为下载文件夹）是否启用。默认 false。 */
   filesystemMcpEnabled: boolean;
   // 联网搜索：选哪个搜索源 + 对应 key
-  searchEngine: "off" | "bocha" | "tavily" | "minimax" | "anySearch";
+  searchEngine: "off" | "bocha" | "tavily" | "minimax" | "anySearch" | "keenable";
   /** 内置浏览器视口模式：auto 面板窄时用移动版身份访问；custom 始终桌面版（原有行为）。默认 auto。 */
   browserViewportMode: BrowserViewportMode;
   searchBochaKey: string;
   searchTavilyKey: string;
   searchMinimaxKey: string;
   searchAnySearchKey: string;
+  searchKeenableKey: string;
   /** ✉️邮件发送插件是否启用 */
   emailEnabled: boolean;
   /** SMTP 主机，如 smtp.qq.com */

@@ -1736,6 +1736,7 @@
       "searchtavily": "Tavily",
       "searchminimax": "MiniMax (uvx required)",
       "searchanySearch": "AnySearch",
+      "searchkeenable": "Keenable (key optional)",
       "searchKey": "{{provider}} key",
       "email": "Send email",
       "emailDescription": "Send email and attachments through SMTP. Use an app authorization code, not your login password.",

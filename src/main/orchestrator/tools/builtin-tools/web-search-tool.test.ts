@@ -90,3 +90,47 @@ describe("web_search 结果缓存", () => {
     expect(second.cached).toBeUndefined();
   });
 });
+
+describe("web_search Keenable", () => {
+  function makeKeenableResp(): Response {
+    return {
+      ok: true,
+      status: 200,
+      statusText: "OK",
+      json: async () => ({ results: [{ title: "Keenable", url: "https://keenable.ai", snippet: "search for agents" }] }),
+    } as unknown as Response;
+  }
+
+  it("没有 key 时走免 key 的 public 接口", async () => {
+    setSearchConfig(() => "keenable", () => "", () => "", () => "", () => "");
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => makeKeenableResp());
+    vi.stubGlobal("fetch", fetchMock);
+
+    const out = JSON.parse(await webSearchTool.execute({ query: "agents" })) as { resultCount: number; results: Array<{ url: string; snippet: string }> };
+    expect(fetchMock.mock.calls[0][0]).toBe("https://api.keenable.ai/v1/search/public");
+    const init = fetchMock.mock.calls[0][1] as RequestInit;
+    const headers = init.headers as Record<string, string>;
+    expect(headers["X-Keenable-Title"]).toBe("Cyrene-Agent");
+    expect(headers["X-API-Key"]).toBeUndefined();
+    expect(JSON.parse(String(init.body))).toEqual({ query: "agents", max_results: 8 });
+    expect(out.resultCount).toBe(1);
+    expect(out.results[0]).toEqual({ title: "Keenable", url: "https://keenable.ai", snippet: "search for agents" });
+  });
+
+  it("有 key 时走 /v1/search 并带 X-API-Key", async () => {
+    setSearchConfig(() => "keenable", () => "", () => "", () => "", () => "keen-key");
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => makeKeenableResp());
+    vi.stubGlobal("fetch", fetchMock);
+
+    await webSearchTool.execute({ query: "agents" });
+    expect(fetchMock.mock.calls[0][0]).toBe("https://api.keenable.ai/v1/search");
+    const headers = (fetchMock.mock.calls[0][1] as RequestInit).headers as Record<string, string>;
+    expect(headers["X-API-Key"]).toBe("keen-key");
+  });
+
+  it("接口报错时抛出搜索失败", async () => {
+    setSearchConfig(() => "keenable", () => "", () => "", () => "", () => "");
+    vi.stubGlobal("fetch", vi.fn(async () => ({ ok: false, status: 429, statusText: "Too Many Requests" }) as unknown as Response));
+    await expect(webSearchTool.execute({ query: "agents" })).rejects.toThrow("HTTP 429");
+  });
+});

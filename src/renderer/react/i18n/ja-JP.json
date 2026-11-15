@@ -1760,6 +1760,7 @@
       "searchtavily": "Tavily",
       "searchminimax": "MiniMax（uvx が必要）",
       "searchanySearch": "AnySearch",
+      "searchkeenable": "Keenable（キーは任意）",
       "searchKey": "{{provider}} Key",
       "email": "メール送信",
       "emailDescription": "SMTP を通じてメールと添付ファイルを送信します。メールの認証コードを入力し、ログインパスワードは入力しないでください。",
